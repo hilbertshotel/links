@@ -1,10 +1,9 @@
 use std::io;
 use std::path::Path;
-use std::fs::File;
 use std::env;
 use std::fs::OpenOptions;
 use serde::{Serialize, Deserialize};
-use std::io::{BufWriter, Write, BufReader, BufRead};
+use std::io::{BufWriter, Write, BufReader};
 use bincode::{serialize_into, deserialize_from};
 
 
@@ -18,7 +17,14 @@ struct Bookmark {
 fn main() {
     // check whether file exists and create new if it doesn't
     if Path::new("bookmarks.bin").exists() == false {
-        File::create("bookmarks.bin").unwrap();
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open("bookmarks.bin")
+            .unwrap();
+        let storage: Vec<Bookmark> = Vec::new();
+        let mut writer = BufWriter::new(file);
+        serialize_into(&mut writer, &storage).unwrap();
     }
 
     // take arguments and proceed with parsing
@@ -28,15 +34,15 @@ fn main() {
         1 => println!("missing arguments"),
         
         2 => match &input[1][..] {
-            "list" => list(),
-            "help" => help(),
-            "add" => add(),
+            "list" => println!("{}", list()),
+            "help" => println!("{}", help()),
+            "add" => println!("{}", add()),
             _ => println!("unknown command '{}'", input[1]),
         }
         
         3 => match &input[1][..] {
-            "find" => find(&input[2]),
-            "del" => del(&input[2]),
+            "find" => println!("{}", find(&input[2])),
+            "del" => println!("{}", del(&input[2])),
             _ => println!("unknown command '{} {}'", input[1], input[2]),
         }
         
@@ -45,55 +51,44 @@ fn main() {
 }
 
 
-fn help() {
-    println!("\n  help, list, add, del <index>, find <substring>\n");
+fn help() -> String {
+    "\n  help, list, add, del <index>, find <substring>\n".to_string()
 }
 
 
-fn list() {
+fn list() -> String {
     let file = OpenOptions::new()
         .read(true)
         .open("bookmarks.bin")
         .unwrap();
 
-    let mut reader = BufReader::new(&file);
-    let buffer = reader.fill_buf().unwrap();
-
-    if buffer.is_empty() {
-        println!("bookmarks empty");
+    let mut reader = BufReader::new(file);
+    let storage: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
+    
+    if storage.is_empty() {
+        "bookmarks empty".to_string()
     } else {
-        let storage: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
-
-        if storage.is_empty() {
-            println!("bookmarks empty");
-        } else {
-            println!();
-            for (i, bookmark) in storage.iter().enumerate() {
-                println!("  {}. {}", i+1, bookmark.description);
-                println!("  {}\n", bookmark.url);
-            }
+        println!();
+        for (i, bookmark) in storage.iter().enumerate() {
+            println!("  {}. {}", i+1, bookmark.description);
+            println!("  {}\n", bookmark.url);
         }
+        "ok".to_string()
     }
 }
 
 
-fn add() {
+fn add() -> String {
     // handle input
     let mut url = String::new();
-    print!("url: ");
-    
+    print!("url: ");    
     io::stdout().flush().unwrap();
-    io::stdin()
-        .read_line(&mut url)
-        .expect("stdin error");
+    io::stdin().read_line(&mut url).unwrap();
     
     let mut description = String::new();
     print!("description: ");
-
     io::stdout().flush().unwrap();
-    io::stdin()
-        .read_line(&mut description)
-        .expect("stdin error");
+    io::stdin().read_line(&mut description).unwrap();
 
     let bookmark = Bookmark{
         url: url.trim().to_string(),
@@ -106,15 +101,8 @@ fn add() {
         .open("bookmarks.bin")
         .unwrap();
 
-    let mut reader = BufReader::new(file);
-    let buffer = reader.fill_buf().unwrap();
-    
-    let mut storage: Vec<Bookmark> = if buffer.is_empty() {
-        Vec::new()
-    } else {
-        deserialize_from(&mut reader).unwrap()
-    };
-    
+    let mut reader = BufReader::new(&file);
+    let mut storage: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
     storage.push(bookmark);
 
     // serialize
@@ -123,12 +111,14 @@ fn add() {
         .open("bookmarks.bin")
         .unwrap();
 
-    let mut writer = BufWriter::new(file);
+    let mut writer = BufWriter::new(&file);
     serialize_into(&mut writer, &storage).unwrap();
+
+    "ok".to_string()
 }
 
 
-fn del(index: &String) {
+fn del(index: &String) -> String {
     let i: usize = index.parse().unwrap();
     
     let file = OpenOptions::new()
@@ -137,35 +127,31 @@ fn del(index: &String) {
         .unwrap();
 
     let mut reader = BufReader::new(file);
-    let buffer = reader.fill_buf().unwrap();
-
-    if buffer.is_empty() {
-        println!("bookmarks empty");
-    } else {
-        let mut storage: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
+    let mut storage: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
         
-        if storage.is_empty() {
-            println!("bookmarks empty");
-        } else if i > storage.len() || i < 1 {
-            println!("index out of range");
-        } else {
-            storage.remove(i-1);
-            let file = OpenOptions::new()
-                .write(true)
-                .open("bookmarks.bin")
-                .unwrap();
+    if storage.is_empty() {
+        "bookmarks empty".to_string()
 
-            let mut writer = BufWriter::new(file);
-            serialize_into(&mut writer, &storage).unwrap();
-        }
+    } else if i > storage.len() || i < 1 {
+        "index out of range".to_string()
+
+    } else {
+        storage.remove(i-1);
+        let file = OpenOptions::new()
+            .write(true)
+            .open("bookmarks.bin")
+            .unwrap();
+
+        let mut writer = BufWriter::new(file);
+        serialize_into(&mut writer, &storage).unwrap();
+        "ok".to_string()
     }
 }
 
 
 ///// FIND BOOKMARK /////
-fn find(substring: &String) {
-    println!("{}", substring);
-    
+fn find(_substring: &String) -> String {
+    "find".to_string()    
 }
 
 
