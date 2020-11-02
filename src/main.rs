@@ -1,7 +1,13 @@
 // kbm :: kolu's bookmarks terminal tool
+
+use std::io;
+use std::path::Path;
+use std::fs::File;
 use std::env;
-use bincode::{serialize_into, deserialize_from};
+use std::fs::OpenOptions;
 use serde::{Serialize, Deserialize};
+use std::io::{BufWriter, Write, BufReader, BufRead};
+use bincode::{serialize_into, deserialize_from};
 
 
 ///// BOOKMARK STRUCT /////
@@ -14,6 +20,13 @@ struct Bookmark {
 
 ///// MAIN /////
 fn main() {
+
+    // check whether file exists and create new if it doesn't
+    if Path::new("bookmarks.bin").exists() == false {
+        File::create("bookmarks.bin").unwrap();
+    }
+
+    // take arguments and proceed with parsing
     let input: Vec<String> = env::args().collect();
     
     match input.len() {
@@ -43,7 +56,14 @@ fn main() {
 
 ///// LIST BOOKMARKS /////
 fn list() {
-    println!("list");
+    let file = OpenOptions::new()
+        .read(true)
+        .open("bookmarks.bin")
+        .unwrap();
+
+    let mut reader = BufReader::new(&file);
+    let storage: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
+    println!("{:?}", storage);
 }
 
 
@@ -55,10 +75,6 @@ fn help() {
 
 ///// ADD BOOKMARK /////
 fn add() {
-    use std::io;
-    use std::io::{BufWriter, Write, BufReader};
-    use std::fs::OpenOptions;
-
     // ask for 'url' input
     let mut url = String::new();
     print!("url: ");
@@ -83,33 +99,32 @@ fn add() {
         description: description.trim().to_string(),
     };
 
-
-    let mut storage_vector: Vec<Bookmark> = Vec::new();
-    storage_vector.push(bookmark);
-    // read file and check if empty
-    // if empty create new vector, append bookmark and serialize
-    // else load content - deserialize and append bookmark
-    // serialize and write
-
-    let file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open("bookmarks.bin");
-
-
-    let mut writer = BufWriter::new(file.unwrap());
-    serialize_into(&mut writer, &storage_vector).unwrap();
-
-
+    // open file for reading
     let file = OpenOptions::new()
         .read(true)
-        .open("bookmarks.bin");
-    
-    let mut reader = BufReader::new(file.unwrap());
-    let decoded: Vec<Bookmark> = deserialize_from(&mut reader).unwrap();
+        .open("bookmarks.bin")
+        .unwrap();
 
-    println!("{:?}", decoded);
+    // check whether file is empty
+    // if so - create new storage vector - else deserialize existing
+    let mut reader = BufReader::new(file);
+    let buffer = reader.fill_buf().unwrap();
+    let mut storage: Vec<Bookmark> = if buffer.is_empty() {
+        Vec::new()
+    } else {
+        deserialize_from(&mut reader).unwrap()
+    };
+    storage.push(bookmark);
 
+    // open file for writing
+    let file = OpenOptions::new()
+        .write(true)
+        .open("bookmarks.bin")
+        .unwrap();
+
+    // serialize new bookmark and write to file
+    let mut writer = BufWriter::new(file);
+    serialize_into(&mut writer, &storage).unwrap();
 }
 
 
