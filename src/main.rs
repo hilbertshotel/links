@@ -51,17 +51,7 @@ fn help() -> String {
 
 fn list() -> String {
     let bookmark_list: Vec<Bookmark> = deserialize_list("bookmarks.bin"); 
-
-    if bookmark_list.is_empty() {
-        "empty".to_string()
-    } else {
-        println!();
-        for (index, bookmark) in bookmark_list.iter().enumerate() {
-            println!("  {}. {}\n  {}\n", index+1, bookmark.description, bookmark.url);
-            //println!("  {}\n", bookmark.url);
-        }
-        "".to_string()
-    }
+    print_bookmarks(bookmark_list, "empty")
 }
 
 
@@ -80,15 +70,21 @@ fn add() -> String {
 
 
 fn del(index: &String) -> String {
-    let index: usize = index.parse().unwrap();
-    let mut bookmark_list = deserialize_list("bookmarks.bin");
-
-    if index > bookmark_list.len() || index < 1 {
-        "index out of range".to_string()
+    let check = index.chars().all(char::is_numeric);
+    
+    if check == false {
+        "index must be a number".to_string()
     } else {
-        bookmark_list.remove(index-1);
-        serialize_list(bookmark_list, "bookmarks.bin");
-        "".to_string()
+        let index: usize = index.parse().unwrap();
+        let mut bookmark_list = deserialize_list("bookmarks.bin");
+
+        if index > bookmark_list.len() || index < 1 {
+            "index out of range".to_string()
+        } else {
+            bookmark_list.remove(index-1);
+            serialize_list(bookmark_list, "bookmarks.bin");
+            "".to_string()
+        }
     }
 }
 
@@ -102,16 +98,7 @@ fn find(substring: &String) -> String {
             search_result.push(bookmark);
         }
     }
-
-    if search_result.is_empty() {
-        "nothing found".to_string()
-    } else {
-        println!();
-        for (index, bookmark) in search_result.iter().enumerate() {
-            println!("  {}. {}\n  {}\n", index+1, bookmark.description, bookmark.url);    
-        }
-        "".to_string()
-    }
+    print_bookmarks(search_result, "nothing found")
 }
 
 
@@ -145,6 +132,7 @@ fn serialize_list(bookmark_list: Vec<Bookmark>, filename: &str) {
     serialize_into(&mut writer, &bookmark_list).unwrap();
 }
 
+
 fn check_for_file(filename: &str) {
     if !Path::new(filename).exists() {
         let file = OpenOptions::new()
@@ -157,4 +145,18 @@ fn check_for_file(filename: &str) {
         serialize_into(&mut writer, &bookmark_list).unwrap();
     }
 }
+
+
+fn print_bookmarks(container: Vec<Bookmark>, error: &str) -> String {
+    if container.is_empty() {
+        error.to_string()
+    } else {
+        println!();
+        for (index, bookmark) in container.iter().enumerate() {
+            println!("  {}. {}\n  {}\n ", index+1, bookmark.description, bookmark.url);
+         }
+         "".to_string()
+    }
+}
+
 
