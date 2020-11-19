@@ -47,7 +47,7 @@ fn main() {
 
 // COMMANDS //
 fn help() -> String {
-    "\n  help, list, add, del <index>, find <substring>, clear!\n".to_string()
+    "\n  list, add, del <index>, find <substring>, clear!\n".to_string()
 }
 
 
