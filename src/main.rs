@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use std::io::{BufWriter, Write, BufReader};
 use bincode::{serialize_into, deserialize_from};
 
-const PATH: &str = "/home/kolu/code/rust/bin/bookmarks.bin";
+const PATH: &str = "/home/kolu/code/bin/bookmarks.bin";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Bookmark {   
@@ -21,10 +21,10 @@ fn main() {
     let input: Vec<String> = env::args().collect();
     
     let output = match input.len() {
-        1 => help(),
+        1 => list(),
         
         2 => match &input[1][..] {
-            "list" => list(),
+            "help" => help(),
             "add" =>  add(),
             "clear!" => clear(),
             _ => format!("unknown command '{}'", input[1]),
@@ -47,7 +47,7 @@ fn main() {
 
 // COMMANDS //
 fn help() -> String {
-    "\n  list, add, del <index>, find <substring>, clear!\n".to_string()
+    "\n  help, add, del <index>, find <substring>, clear!\n".to_string()
 }
 
 

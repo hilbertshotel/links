@@ -1,5 +1,5 @@
 [package]
-name = "kbm"
+name = "links"
 version = "0.1.0"
 authors = ["kolu <nikolay.kalchev@abv.bg>"]
 edition = "2018"
