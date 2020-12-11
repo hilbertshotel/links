@@ -168,7 +168,7 @@ fn print_bookmarks(container: Vec<Bookmark>, error: &str) -> String {
     } else {
         println!();
         for (index, bookmark) in container.iter().enumerate() {
-            println!("  {}. {}\n  {}\n ", index+1, bookmark.description, bookmark.url);
+            println!("  {}. {}\n  \x1B[33m{}\x1B[0m\n ", index+1, bookmark.description, bookmark.url);
          }
          "".to_string()
     }
