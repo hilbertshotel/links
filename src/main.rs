@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use std::io::{BufWriter, Write, BufReader};
 use bincode::{serialize_into, deserialize_from};
 
-const PATH: &str = "/home/kolu/bin/bookmarks.bin";
+const PATH: &str = "/home/kolu/bin/bookmarks";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Bookmark {   
